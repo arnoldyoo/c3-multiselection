@@ -1,14 +1,21 @@
+var item = ['x'];
+for (var i = 0; i< 47 ; i++) {
+    item.push(new Date(2017, 0, i).getTime());
+}
+
+var values = ['value'];
+for (var i = 0; i< 47; i++) {
+    values.push(Math.round( Math.random() * 200 ));
+}
+
+console.log(item);
 var chart = c3Chart.generate({
     data: {
-    		names: {
-        	data1: 'd100',
-        },
+    	x: 'x',	
         columns: [
-            ['data1', 30, 200, 100, 400, 150, 250],
+            item,
+            values
         ],
-        axes: {
-            data1: 'y',
-        },
         types: {data1: 'area-spline'},
       selection: {
         enabled: true,
@@ -18,10 +25,12 @@ var chart = c3Chart.generate({
     },
     axis: {
         x: {
-            type: 'category',
-            categories: ['2016-01-01', '2016-01-02', '2016-01-03', '2016-01-04', '2016-01-05', '2016-01-06'],
+            type: 'timeseries',
             tick: {
-                count: 4
+                count: 6,
+                centerd: true,
+                rotate: 60,
+                format:'%Y-%m-%d'
             }
         }
     },
@@ -31,6 +40,7 @@ var chart = c3Chart.generate({
 });
 
 var ranvalue = undefined;
+var data = undefined;
 
 aa = function() {
     console.log('aa');
@@ -38,19 +48,15 @@ aa = function() {
 }
 
 remove = function() {
-    console.log(ranvalue);
-    console.log(chart);
-    chart.cancelMultiselection(ranvalue);
+    chart.cancelMultiselection(ranvalue, data);
 }
 
 function selectionEnd(config, date, selectedData) {
     // console.log(arguments[1]);
     // console.log(config.axis.getXAxisTickFormat());
     // console.log(chart.selected());
-    console.log(config);
-    console.log(date);
     ranvalue = config.randomUid;
-    console.log(selectedData);
+    data = selectedData;
+    console.log(date);
     // console.log(window.event);
 }
-

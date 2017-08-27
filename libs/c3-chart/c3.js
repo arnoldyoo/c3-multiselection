@@ -385,8 +385,12 @@
             })
             .on('click', function (d) {
                 var index = d.index;
-                $$.main.select('.'+CLASS.dragarea+$$.randomUid).remove();
+                
+                // remove multi selection
+                $$.api.cancelMultiselection($$.randomUid, $$.multiselectedBeforeData);
                 $$.multiselectedData = [];
+                $$.multiselectedBeforeData = [];
+
                 if ($$.hasArcType() || !$$.toggleShape) { return; }
                 if ($$.cancelClick) {
                     $$.cancelClick = false;
@@ -595,7 +599,6 @@
             .attr("r", r);
     };
     c3_chart_internal_fn.unselectPoint = function (target, d, i) {
-        console.log(target, d , i);
         var $$ = this;
         $$.config.data_onunselected.call($$.api, d, target.node());
         // remove selected-circle from low layer g
@@ -2380,43 +2383,6 @@
     };
 /////////////////////////////multimulti//////////////////////////////////////
 
-
-    // c3_chart_internal_fn.selectPointMultiSelection = function (target, d, i) {
-    //     var $$ = this, config = $$.config,
-    //         cx = (config.axis_rotated ? $$.circleY : $$.circleX).bind($$),
-    //         cy = (config.axis_rotated ? $$.circleX : $$.circleY).bind($$),
-    //         r = $$.pointSelectR.bind($$);
-    //     config.data_onselected.call($$.api, d, target.node());
-    //     // add selected-circle on low layer g
-    //     $$.main.select('.' + CLASS.selectedCircles + $$.getTargetSelectorSuffix(d.id)).selectAll('.' + CLASS.selectedCircle + '-' + i)
-    //         .data([d])
-    //         .enter().append('circle')
-    //         .attr("class", function () { return $$.generateClass('??', i); })
-    //         .attr("cx", cx)
-    //         .attr("cy", cy)
-    //         .attr("stroke", function () { return $$.color(d); })
-    //         .attr("r", function (d) { return $$.pointSelectR(d) * 1.4; })
-    //         .transition().duration(100)
-    //         .attr("r", r);
-    // };
-    // c3_chart_internal_fn.unselectPointMultiSelection = function (target, d, i) {
-    //     console.log(target);
-    //     console.log(d);
-    //     console.log(i);
-    //     var $$ = this;
-    //     $$.config.data_onunselected.call($$.api, d, target.node());
-    //     // remove selected-circle from low layer g
-    //     $$.main.select('.' + CLASS.selectedCircles + $$.getTargetSelectorSuffix(d.id)).selectAll('.' + CLASS.selectedCircle + '-' + i)
-    //         .transition().duration(100).attr('r', 0)
-    //         .remove();
-    // };
-    // c3_chart_internal_fn.togglePointMultiSelection = function (selected, target, d, i) {
-    //     selected ? this.selectPointMultiSelection(target, d, i) : this.unselectPointMultiSelection(target, d, i);
-    // };
-
-
-
-
     c3_chart_internal_fn.multiselectdrag = function (mouse) {
 
         var $$ = this, config = $$.config, main = $$.main, d3 = $$.d3;
@@ -2490,12 +2456,11 @@
 
     c3_chart_internal_fn.multiselectdragstart = function (mouse) {
         var $$ = this, config = $$.config;
+        $$.multiselectedBeforeData = $$.multiselectedData;
         $$.multiselectedData = [];
         if ($$.hasArcType()) { return; }
         if (! config.data_selection_enabled) { return; } // do nothing if not selectable
         $$.dragStart = mouse;
-
-        
         var dragArea = $$.main.selectAll('*[class^='+CLASS.dragarea+']');
 
         if (dragArea[0].length + 1 <= $$.config.multiselectionCount) {
@@ -2516,26 +2481,27 @@
         $$.main.selectAll('.' + CLASS.shape)
             .classed(CLASS.INCLUDED, false);
         $$.dragging = false;
-        var selectedArr = $$.api.selected();
+        var selectedDateTemp = [];
         var selectedDate = [];
-        selectedArr.map((d,i) => {
-            selectedDate.push($$.xAxisTickFormat(d.x))
+        $$.multiselectedData.map((d, i)=> {
+            selectedDateTemp.push($$.xAxisTickFormat(d[0][0].__data__.x));
         })
+
+        selectedDate = [selectedDateTemp[0], selectedDateTemp[selectedDateTemp.length-1]];
         $$.config.multiselectionCallback.call($$, $$, selectedDate, $$.multiselectedData);
     };
 
-    c3_chart_fn.cancelMultiselection = function(uid) {
+    c3_chart_fn.cancelMultiselection = function(uid, data) {
         var $$ = this.internal;
         var removeRect = $$.main.select('.' + CLASS.dragarea+uid);
         removeRect.remove();
-        $$.multiselectedData.map(function(d) {
-            var isSelected = d.classed(CLASS.SELECTED);
-            var isIncluded = d.classed(CLASS.INCLUDED);
-            d.classed(CLASS.INCLUDED, !isIncluded);
-            d.classed(CLASS.SELECTED, !isSelected);
+        data.map(function(d) {
+            // var isSelected = d.classed(CLASS.SELECTED);
+            // var isIncluded = d.classed(CLASS.INCLUDED);
+            // d.classed(CLASS.INCLUDED, !isIncluded);
+            // d.classed(CLASS.SELECTED, !isSelected);
             $$.unselectPoint(d, d[0][0].__data__, d[0][0].__data__.index);
         })
-        $$.multiselectedData = [];
     }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
